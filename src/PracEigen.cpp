@@ -11,6 +11,7 @@
 #include "localizer.hpp"
 #include "GnsstoMag.hpp"
 
+
 using namespace Eigen;
 
 static int gShutOff = 0;
