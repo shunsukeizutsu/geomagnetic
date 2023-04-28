@@ -14,6 +14,7 @@
 #include "localizer.hpp"
 #include "Eigen/Core"
 #include <Eigen/LU>
+#include "creatfig.hpp"
 
 using namespace Eigen;
 
@@ -48,6 +49,8 @@ int main(void)
     // データが保存されているアドレスをポインタに代入
     magdata = &imu.data();
     localdata = &local.data();
+
+    PlotData PD;
 
     try
     {
@@ -85,7 +88,8 @@ int main(void)
                 tmp_mag[2] = tmp_mag[2] * kdata;
                 double theta_mag = atan2(-1.0 * tmp_mag[1], tmp_mag[0]);
                 theta_mag = trans_q2(theta_mag + (M_PI_2));
-                printf("%f %f\n",imu.time(),theta_mag);
+                //printf("%f %f\n",imu.time(),theta_mag);
+                PD.saveData2D(imu.time(),theta_mag);
             }
             /*if(local.read())
             {
@@ -94,6 +98,7 @@ int main(void)
             else
                 break;
         }
+        PD.PrintFig2D();
     }
     catch (std::runtime_error const &error)
     {
