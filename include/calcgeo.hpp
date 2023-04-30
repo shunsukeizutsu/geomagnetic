@@ -24,12 +24,13 @@ typedef struct
 typedef struct CalcMatrix
 {
     Matrix<double, 3, 3> R;
+    Matrix<double, 3, 3> RT;
     Matrix<double, 3, 1> m;
     Matrix<double, 3, 1> F;
     Matrix<double, 3, 1> b;
     Matrix<double, 3, 4> J;
     Matrix<double, 4, 3> JT;
-    Matrix<double, 4, 1> X;
+    Matrix<double, 3, 1> X;
     Matrix<double, 3, 1> M;
 } CreatMatrix;
 
@@ -37,5 +38,6 @@ static int gShutOff = 0;
 static void setSigInt(void);
 static void Terminate(void);
 void printdata(data_sec data);
-CreatMatrix CaluculateMatrix(data_sec data, double k, double ax, double ay, double az);
-std::vector<data_sec> data;
+CreatMatrix CaluculateMatrix(data_sec data);
+//std::vector<data_sec> data;
+void printdata(double a,double b,double c);

@@ -20,7 +20,7 @@ IF(NOT EIGEN3_INCLUDE_DIR)
 	set(EIGEN3_INCLUDE_DIR $ENV{EIGEN3_ROOT_DIR})
 ENDIF()
 
-include_directories( ./src ../izutu/utility/src ./include ${Boost_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} )
+include_directories( ./src ../izutu/utility/src ./include ~/creatFig/src ${Boost_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} )
 
 # set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -35,14 +35,21 @@ message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
 
 
-add_executable(calcgeo ./src/calcgeo.cpp ./src/GnsstoMag.cpp)
-target_link_libraries(calcgeo m ssm)
+#add_executable(calcgeo ./src/calcgeo.cpp ./src/GnsstoMag.cpp)
+#target_link_libraries(calcgeo m ssm)
 
-#add_executable(test ./src/test.cpp ../izutu/utility/src/utility.cpp )
-#target_link_libraries(test m ssm)
+add_executable(version3 ./src/version3.cpp ./src/GnsstoMag.cpp ~/creatFig/src/creatfig.cpp)
+target_link_libraries(version3 m ssm)
+
+add_executable(test ./etc/test.cpp ~/creatFig/src/creatfig.cpp)
+target_link_libraries(test m ssm)
+
+#add_executable(calcgeover2 ./src/calcgeover2.cpp ./src/GnsstoMag.cpp ~/creatFig/src/creatfig.cpp)
+#target_link_libraries(calcgeover2 m ssm)
 
 #add_executable(GtoM ./src/Magcal.cpp ./src/GnsstoMag.cpp)
 #target_link_libraries(GtoM m ssm)
 
 #add_executable(eigen ./src/PracEigen.cpp ./src/GnsstoMag.cpp)
 #target_link_libraries(eigen m ssm)
+
