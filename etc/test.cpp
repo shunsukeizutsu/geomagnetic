@@ -70,43 +70,16 @@ int main(void)
             Matrix<double, 3, 1> m;
             Matrix<double, 3, 1> M;
 
-            if (imu.read())
+            if (local.read())
             {
                 double tmp_mag[3];
-                double Sr, Sp, Cr, Cp;
-                Sr = sin(magdata->estAng[0]);
-                Sp = sin(magdata->estAng[1]);
-                Cr = cos(magdata->estAng[0]);
-                Cp = cos(magdata->estAng[1]);
-                double xx = magdata->mag[0] - mag_offsetX;
-                double yy = magdata->mag[1] - mag_offsetY;
-                double zz = magdata->mag[2] - mag_offsetZ;
 
-                tmp_mag[0] = (kdata * Cp * xx) + (kdata * Sp * Sr * yy) + (kdata * Sp * Cr * zz);
-                tmp_mag[1] = (kdata * Cr * yy) - (kdata * Sr * zz);
-                tmp_mag[2] = -1.0 * (kdata * Sp * xx) + (kdata * Cp * Sr * yy) + (kdata * Cp * Cr * zz);
-
-                double theta_mag = atan2(-1.0 * tmp_mag[1], tmp_mag[0]);
-                // double theta_kmag = atan2(-1.0 * tmp_kmag[1], tmp_kmag[0]);
-                theta_mag = trans_q2(theta_mag + (M_PI_2));
-                if (local.readTime(imu.time()))
-                {
-                    if (imu.time() - imu.getStartTime() > 1000 && imu.time() - imu.getStartTime() < 1300)
-                    {
-                        PD.SaveData2Dx2(imu.time() - imu.getStartTime(), theta_mag, imu.time() - imu.getStartTime(), localdata->estAng[2]);
-                    }
-                }
-                // printf("%f %f\n",imu.time(),theta_mag);
-            }
-            /*if (local.read())
-            {
-                double tmp_mag[3];
-                double tmp_kmag[3];
                 double Sr, Sp, Cr, Cp;
                 Sr = sin(localdata->estAng[0]);
                 Sp = sin(localdata->estAng[1]);
                 Cr = cos(localdata->estAng[0]);
                 Cp = cos(localdata->estAng[1]);
+
                 if (imu.readTime(local.time()))
                 {
                     double xx = magdata->mag[0] - mag_offsetX;
@@ -115,16 +88,14 @@ int main(void)
                     tmp_mag[0] = (Cp * xx) + (Sp * Sr * yy) + (Sp * Cr * zz);
                     tmp_mag[1] = (Cr * yy) - (Sr * zz);
                     tmp_mag[2] = -1.0 * (Sp * xx) + (Cp * Sr * yy) + (Cp * Cr * zz);
-                    tmp_kmag[0] = tmp_mag[0] * kdata;
-                    tmp_kmag[1] = tmp_mag[1] * kdata;
-                    tmp_kmag[2] = tmp_mag[2] * kdata;
-                    double theta_kmag = atan2(-1.0 * tmp_kmag[1], tmp_kmag[0]);
-                    theta_kmag = trans_q2(theta_kmag + (M_PI_2));
-                    if(local.time()-local.getStartTime() > 100 && local.time()-local.getStartTime() < 1000){
-                    PD.SaveData2Dx2(imu.time() - imu.getStartTime(), theta_kmag, imu.time() - imu.getStartTime(), localdata->estAng[2]);
-                    }
+
+                    //tmp_mag[0] = tmp_mag[0] / kmag;
+                    //tmp_mag[1] = tmp_mag[1] / kmag;
+                    //tmp_mag[2] = tmp_mag[2] / kmag;
+                    double theta_mag = atan2(-1.0 * tmp_mag[1], tmp_mag[0]);
+                    theta_mag = trans_q2(theta_mag + (M_PI_2));
                 }
-            }*/
+            }
             else
                 break;
         }
