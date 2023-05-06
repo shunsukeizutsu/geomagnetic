@@ -3,29 +3,34 @@
 
 static char xlabel[256 / 2] = "count";
 static char ylabel[256 / 2] = "offset[μT]";
-static char a[256 / 2] = "offset1";
+
+static char name[256/2] = "offset";
+/*static char a[256 / 2] = "offset1";
 static char b[256 / 2] = "offset2";
-static char c[256 / 2] = "offset3";
+static char c[256 / 2] = "offset3";*/
+static char a[256 / 2] = "a[0]";
+static char b[256 / 2] = "a[1]";
+static char c[256 / 2] = "a[2]";
 
 int main(void)
 {
     MagEquation MF;
-    PlotData Fig(250.0 , 0.0 ,50.0 ,-50.0,1); // gnuplot
+    PlotData Fig(240.0, 0.0, 1.0, -1.0, 1); // gnuplot
 
     SSMLog<gnss_gl, gnss_property> rtk_gnss;
     SSMLog<imu_fs, imu_property> imu;
     SSMLog<localizer, localizer_property> local;
-    if (!rtk_gnss.open("../2023.0402.0748/rtk_gnss.log"))
+    if (!rtk_gnss.open("/home/shunsuke/2023_logdata/20230401/log_am5/2023.0401.0744/rtk_gnss.log"))
     {
         fprintf(stderr, "Error! Cannot open gnss.log");
         exit(EXIT_FAILURE);
     }
-    if (!imu.open("../2023.0402.0748/imu.log"))
+    if (!imu.open("/home/shunsuke/2023_logdata/20230401/log_am5/2023.0401.0744/imu.log"))
     {
         fprintf(stderr, "Error! Cannot open imu.log");
         exit(EXIT_FAILURE);
     }
-    if (!local.open("../2023.0402.0748/localizer.log"))
+    if (!local.open("/home/shunsuke/2023_logdata/20230401/log_am5/2023.0401.0744/localizer.log"))
     {
         fprintf(stderr, "Error! Caonnot open localizer.log");
         exit(EXIT_FAILURE);
@@ -57,9 +62,11 @@ int main(void)
                     count++;
                     data_sec tmp;
                     time = rtk_gnss.time();
-                    tmp.time = time;
+
                     GG gmag;
                     gmag = MF.MagXYZ(gnssdata->latitude, gnssdata->longitude);
+
+                    tmp.time = time;
                     tmp.gnssdata[0] = gmag.GmagY / 1000;
                     tmp.gnssdata[1] = gmag.GmagX / 1000;
                     tmp.gnssdata[2] = -gmag.GmagZ / 1000;
@@ -111,7 +118,7 @@ int main(void)
                             XYsum[1] += MDD.X(1, 0) * MDD.m(1, 0);
                             XYsum[2] += MDD.X(2, 0) * MDD.m(2, 0);
                         }
-                        // std::cout << Xsum[0] << " " << Xsum[1] << " " << Xsum[2] << std::endl;
+
                         aveX[0] = Xsum[0] / data.size();
                         aveX[1] = Xsum[1] / data.size();
                         aveX[2] = Xsum[2] / data.size();
@@ -127,35 +134,36 @@ int main(void)
                         aveXY[0] = XYsum[0] / data.size();
                         aveXY[1] = XYsum[1] / data.size();
                         aveXY[2] = XYsum[2] / data.size();
-                        // std::cout << data.size() << " " << data.capacity() << std::endl;
-                        double a[3];
-                        double b[3];
+
+                        double a[3];//1/kの値
+                        double b[3];//offsetの値
                         for (int i = 0; i < 3; i++)
                         {
-                            double Denominator; // 分母
+
                             double Molecular;   // 分子
+                            double Denominator; // 分母
                             Molecular = aveXY[i] - aveX[i] * aveY[i];
                             Denominator = aveX2[i] - aveX[i] * aveX[i];
-                            a[i] = Molecular / Denominator;
-                            b[i] = -a[i] * aveX[i] + aveY[i];
+                            a[i] = Molecular / Denominator;//1/k
+                            b[i] = -a[i] * aveX[i] + aveY[i];//RT*M
                         }
 
-                        // std::cout << count2 << std::endl;
-                        //printdata(a[0], a[1], a[2]);
-                        Fig.SaveData2Dx3(count2,a[0], count2,a[1],count2, a[2]);
+                        Fig.SaveData2Dx3(count2, a[0], count2, a[1], count2, a[2]);
                         //data.clear();
                         //data.shrink_to_fit();
-                        //std::cout << data.capacity() << std::endl;
                     }
                 }
             }
             else
                 break;
         }
-
-        Fig.XYlabel(xlabel ,ylabel);
-        Fig.PrintFig2Dx3(a,b,c);
-        while(!gShutOff)
+        Fig.SeTics(20.0,0.1);
+        Fig.XYlabel(xlabel, ylabel);
+        //Fig.PrintFig2Dx3(a, b, c);
+        //Fig.SaveFigure(name);
+        Fig.PrintFig2Dx3(a, b, c);
+        Fig.SaveFigure(name);
+        while (!gShutOff)
         {
             usleep(1000);
         }
