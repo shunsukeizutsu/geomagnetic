@@ -1,109 +1,55 @@
-/************
- * 2023/04/23
- * Author : Shunsuke
- * SSMのlogfileからデータを出力するプログラム見本
- **************/
-
+#include <iostream>
 #include <stdio.h>
-#include <signal.h>
-#include <stdexcept>
 #include <stdlib.h>
-#include "ssm-log.hpp"
-#include "imu.hpp"
-#include "gnss-f9p.hpp"
-#include "localizer.hpp"
-#include "Eigen/Core"
-#include <Eigen/LU>
+#include <math.h>
+#include <signal.h>
+#include <vector>
+#include <cstring>
+
 #include "creatfig.hpp"
 
-using namespace Eigen;
-
-static char a[256 / 2] = "raw";
-static char b[256 / 2] = "offset";
+typedef struct
+{
+    double time;
+    double x_coor;
+    double y_coor;
+} test;
+typedef struct
+{
+    a[2];
+    b[2];
+} LQsolution;
 
 static int gShutOff = 0;
+static void ctrlC(int aStatus);
 static void setSigInt(void);
 static void Terminate(void);
-double trans_q2(double theta);
+static void LeastSquares(std::vector<test> &data);
+
 int main(void)
 {
-    // SSMLog<データ構造体名,プロパティ構造体名> imu
-    //"imu"の場所はなんでも良い
-    // データ名とプロパティ名はheaderファイル参照
-    // SSMLog<gnss_gl, gnss_property> gnss;
-    SSMLog<imu_fs, imu_property> imu;
-    SSMLog<localizer, localizer_property> local;
-
-    if (!imu.open("../2023.0402.0748/imu.log"))
-    {
-        // logfileを開けるか否か
-        fprintf(stderr, "Error! Cannot open logfile");
-        exit(EXIT_FAILURE);
-    }
-    if (!local.open("../2023.0402.0748/localizer.log"))
-    {
-        // logfileを開けるか否か
-        fprintf(stderr, "Error! Cannot open logfile");
-        exit(EXIT_FAILURE);
-    }
-    // データの構造体を指すポインタを生成
-    imu_fs *magdata;
-    localizer *localdata;
-    // データが保存されているアドレスをポインタに代入
-    magdata = &imu.data();
-    localdata = &local.data();
-
-    PlotData PD(1);
-
     try
     {
         setSigInt();
-        double mag_offsetX = 20.050705;
-        double mag_offsetY = 20.678869;
-        double mag_offsetZ = -27.253018;
-        double kdata = 1 / 0.3071243;
-
+        std::vector<test> data;
+        int count = 0;
         while (!gShutOff)
         {
-            // bool関数であるreadを使う
-            Matrix<double, 3, 3> Rrp;
-            Matrix<double, 3, 1> m;
-            Matrix<double, 3, 1> M;
-
-            if (local.read())
+            if (count < 10)
             {
-                double tmp_mag[3];
+                test tmp;
+                tmp.time = count + 1;
+                tmp.x_coor = count + 2;
+                tmp.y_coor = count + 3;
 
-                double Sr, Sp, Cr, Cp;
-                Sr = sin(localdata->estAng[0]);
-                Sp = sin(localdata->estAng[1]);
-                Cr = cos(localdata->estAng[0]);
-                Cp = cos(localdata->estAng[1]);
-
-                if (imu.readTime(local.time()))
-                {
-                    double xx = magdata->mag[0] - mag_offsetX;
-                    double yy = magdata->mag[1] - mag_offsetY;
-                    double zz = magdata->mag[2] - mag_offsetZ;
-                    tmp_mag[0] = (Cp * xx) + (Sp * Sr * yy) + (Sp * Cr * zz);
-                    tmp_mag[1] = (Cr * yy) - (Sr * zz);
-                    tmp_mag[2] = -1.0 * (Sp * xx) + (Cp * Sr * yy) + (Cp * Cr * zz);
-
-                    //tmp_mag[0] = tmp_mag[0] / kmag;
-                    //tmp_mag[1] = tmp_mag[1] / kmag;
-                    //tmp_mag[2] = tmp_mag[2] / kmag;
-                    double theta_mag = atan2(-1.0 * tmp_mag[1], tmp_mag[0]);
-                    theta_mag = trans_q2(theta_mag + (M_PI_2));
-                }
+                data.push_back(tmp);
+                count++;
             }
+
             else
                 break;
         }
-        PD.PrintFig2Dx2(a, b);
-        while (!gShutOff)
-        {
-            usleep(1000);
-        }
+        LeastSquares(data);
     }
     catch (std::runtime_error const &error)
     {
@@ -132,11 +78,59 @@ static void Terminate(void)
 {
     printf("\nend\n");
 }
-double trans_q2(double theta)
+static result LeastSquares(std::vector<data_sec> &data)
 {
-    while (theta > M_PI)
-        theta -= 2.0 * M_PI;
-    while (theta < -M_PI)
-        theta += 2.0 * M_PI;
-    return theta;
+    double Xsum[2] = {0};
+    double X2sum[2] = {0};
+    double aveX[2] = {0};
+    double aveX2[2] = {0};
+    double Ysum[2] = {0};
+    double aveY[2] = {0};
+    double XYsum[2] = {0};
+    double aveXY[2] = {0};
+
+    for (int i = 0; i < data.size(); i++)
+    {
+        CreatMatrix MDD;
+        MDD = CaluculateMatrix(data[i]);
+        Xsum[0] += MDD.X(0, 0);
+        Xsum[1] += MDD.X(1, 0);
+
+        X2sum[0] += MDD.X(0, 0) * MDD.X(0, 0);
+        X2sum[1] += MDD.X(1, 0) * MDD.X(1, 0);
+
+        Ysum[0] += MDD.m(0, 0);
+        Ysum[1] += MDD.m(1, 0);
+
+        XYsum[0] += MDD.X(0, 0) * MDD.m(0, 0);
+        XYsum[1] += MDD.X(1, 0) * MDD.m(1, 0);
+    }
+
+  /*  aveX[0] = Xsum[0] / data.size();
+    aveX[1] = Xsum[1] / data.size();
+
+    aveX2[0] = X2sum[0] / data.size();
+    aveX2[1] = X2sum[1] / data.size();
+
+    aveY[0] = Ysum[0] / data.size();
+    aveY[1] = Ysum[1] / data.size();
+
+    aveXY[0] = XYsum[0] / data.size();
+    aveXY[1] = XYsum[1] / data.size();
+
+    LQsolution AandB;
+    double k;
+    for (int i = 0; i < 2; i++)
+    {
+
+        double Molecular;   // 分子
+        double Denominator; // 分母
+        Molecular = aveXY[i] - aveX[i] * aveY[i];
+        Denominator = aveX2[i] - aveX[i] * aveX[i];
+        AandB.a[i] = Molecular / Denominator;   // 1/k
+        AandB.b[i] = -a[i] * aveX[i] + aveY[i]; // offset
+    }
+    k = (a[0] + a[1]) / 2;
+    k = 1 / k;*/
+    return AandB;
 }

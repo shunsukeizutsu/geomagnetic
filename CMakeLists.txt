@@ -54,7 +54,7 @@ add_executable(XtoZ ./src/XtoZ.cpp ./src/GnsstoMag.cpp ~/creatFig/src/creatfig.c
 target_link_libraries(XtoZ m ssm)
 
 #最小二乗法で求めた際のXYをグラフにプロットするプログラム
-add_executable(xydata ./src/xydata.cpp ./src/GnsstoMag.cpp ~/creatFig/src/creatfig.cpp)
+add_executable(xydata ./etc/xydata.cpp ./src/GnsstoMag.cpp ~/creatFig/src/creatfig.cpp)
 target_link_libraries(xydata m ssm)
 
 add_executable(compyaw ./src/compyaw.cpp ~/creatFig/src/creatfig.cpp)
@@ -82,5 +82,7 @@ target_link_libraries(yawdata m ssm)
 
 add_executable(callean ./etc/callean.cpp ~/creatFig/src/creatfig.cpp)
 
-add_executable(test ./src/test.cpp ~/creatFig/src/creatfig.cpp)
-target_link_libraries(test m ssm)
+#add_executable(test ./etc/test.cpp ~/creatFig/src/creatfig.cpp)
+#target_link_libraries(test m ssm)
+
+
