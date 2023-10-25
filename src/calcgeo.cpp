@@ -45,15 +45,16 @@ int main(void)
             if (rtk_gnss.read())
             {
                 if (rtk_gnss.time() - rtk_gnss.getStartTime() > 9000)
-                {
+                {//最初の３０分弱は隣に除雪車両がいるため正確な推定が困難
                     if (rtk_gnss.time() - time >= 1.0)
                     {
                         // printf("%d\t",count);
                         count++;
                         if (count > 60)
-                        {
+                        {//60個のデータが構造体に保存されたら終了
                             break;
                         }
+                        //data_sec　構造体に代入
                         data_sec tmp;
                         time = rtk_gnss.time();
                         tmp.time = time;

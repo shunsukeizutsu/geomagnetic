@@ -66,7 +66,7 @@ int main(int aArgc, char **aArgv)
 
         int count[36] = {0};
 
-        std::vector<data_sec> data;
+        std::vector<data_sec> datas;
         while (!gShutOff)
         {
             if (local.read())
@@ -102,7 +102,7 @@ int main(int aArgc, char **aArgv)
                                 tmp.gnssdata[1] = gmag.GmagX / 1000;
                                 tmp.gnssdata[2] = -gmag.GmagZ / 1000;
                             }
-                            data.push_back(tmp);
+                            datas.push_back(tmp);
                             count[i]++;
                             // printf("%d %f %f %f \n",sumcount,time,tmp.gnssdata[0],tmp.gnssdata[1]);
                             break;
@@ -133,7 +133,7 @@ int main(int aArgc, char **aArgv)
                                 tmp.gnssdata[1] = gmag.GmagX / 1000;
                                 tmp.gnssdata[2] = -gmag.GmagZ / 1000;
                             }
-                            data.push_back(tmp);
+                            datas.push_back(tmp);
                             break;
                         }
                     }
@@ -142,91 +142,9 @@ int main(int aArgc, char **aArgv)
             else
                 break;
         }
-
-        printf("%ld\n",data.size());
-
-        double Xsum[2] = {0};
-        double X2sum[2] = {0};
-        double aveX[2] = {0};
-        double aveX2[2] = {0};
-        double Ysum[2] = {0};
-        double aveY[2] = {0};
-        double XYsum[2] = {0};
-        double aveXY[2] = {0};
-
-        for (int i = 0; i < data.size(); i++)
-        {
-            Fig3.SaveData2D(i,data[i].localizer[2]);
-            CreatMatrix MDD;
-            MDD = CaluculateMatrix(data[i]);
-            Xsum[0] += MDD.X(0, 0);
-            Xsum[1] += MDD.X(1, 0);
-
-            X2sum[0] += MDD.X(0, 0) * MDD.X(0, 0);
-            X2sum[1] += MDD.X(1, 0) * MDD.X(1, 0);
-
-            Ysum[0] += MDD.m(0, 0);
-            Ysum[1] += MDD.m(1, 0);
-
-            XYsum[0] += MDD.X(0, 0) * MDD.m(0, 0);
-            XYsum[1] += MDD.X(1, 0) * MDD.m(1, 0);
-
-            Fig.SaveData2D(MDD.X(0, 0), MDD.m(0, 0));
-            Fig2.SaveData2D(MDD.X(1, 0), MDD.m(1, 0));
-        }
-
-        aveX[0] = Xsum[0] / data.size();
-        aveX[1] = Xsum[1] / data.size();
-
-        aveX2[0] = X2sum[0] / data.size();
-        aveX2[1] = X2sum[1] / data.size();
-
-        aveY[0] = Ysum[0] / data.size();
-        aveY[1] = Ysum[1] / data.size();
-
-        aveXY[0] = XYsum[0] / data.size();
-        aveXY[1] = XYsum[1] / data.size();
-
-        double a[2]; // 1/kの値
-        double b[2]; // offsetの値
-        double k;
-        for (int i = 0; i < 2; i++)
-        {
-
-            double Molecular;   // 分子
-            double Denominator; // 分母
-            Molecular = aveXY[i] - aveX[i] * aveY[i];
-            Denominator = aveX2[i] - aveX[i] * aveX[i];
-            a[i] = Molecular / Denominator;   // 1/k
-            b[i] = -a[i] * aveX[i] + aveY[i]; // offset
-        }
-        k = (a[0] + a[1]) / 2;
-        k = 1 / k;
-        // std::cout << k << std::endl;
-        double sum = 0;
-        for (int i = 0; i < data.size(); i++)
-        {
-            sum += Caloffsetz(data[i], k, b[0], b[1]);
-            // printf("%d %f\n", i, Caloffsetz(data[i], k, b[0], b[1]));
-        }
-        // std::cout << sum/data.size() << std::endl;
-        printf("k:%f offsetX:%f offsetY:%f offsetZ:%f \n", k, b[0], b[1], sum / data.size());
-
-        Fig.SeTics(5.0, 5.0);
-        Fig2.SeTics(5.0, 5.0);
-        Fig.XYlabel(xlabel0, ylabel0);
-        Fig2.XYlabel(xlabel1, ylabel1);
-
-        Fig.PrintFig2D();
-        Fig2.PrintFig2D();
-        Fig3.PrintFig2D();
-        // Fig.SaveFigure(fname0);
-        // Fig2.SaveFigure(fname1);
-
-        while (!gShutOff)
-        {
-            usleep(1000);
-        }
+        LQsolution AandB;
+        AandB = LeastSquares(datas); // 最小二乗法を計算
+        printf("a[0]:%f a[1]:%f b[0]:%f b[1]:%f\n", AandB.a[0], AandB.a[1], AandB.b[0], AandB.b[1]);
     }
 
     catch (std::runtime_error const &error)
@@ -358,4 +276,87 @@ static int printShortHelp(const char *programName)
     fputs("OPTION\n", stderr);
     printf("\t-p | --path     PATH     : Set path for log file (default=%s)\n", path);
     return EXIT_SUCCESS;
+}
+static LQsolution LeastSquares(std::vector<data_sec> &data) // 最小二乗法を計算する関数　引数：構造体data_secのvectorデータ　返り値：最小二乗法の解aとbの構造体
+{
+    /**
+     * グラフ化
+     * */
+    /*
+    PlotData Fig(0);
+    PlotData Fig2(0);
+    */
+    double Xsum[2] = {0};
+    double X2sum[2] = {0};
+    double aveX[2] = {0};
+    double aveX2[2] = {0};
+    double Ysum[2] = {0};
+    double aveY[2] = {0};
+    double XYsum[2] = {0};
+    double aveXY[2] = {0};
+
+    for (int i = 0; i < data.size(); i++)
+    {
+        CreatMatrix MDD;
+        MDD = CaluculateMatrix(data[i]);
+        Xsum[0] += MDD.X(0, 0);
+        Xsum[1] += MDD.X(1, 0);
+
+        X2sum[0] += MDD.X(0, 0) * MDD.X(0, 0);
+        X2sum[1] += MDD.X(1, 0) * MDD.X(1, 0);
+
+        Ysum[0] += MDD.m(0, 0);
+        Ysum[1] += MDD.m(1, 0);
+
+        XYsum[0] += MDD.X(0, 0) * MDD.m(0, 0);
+        XYsum[1] += MDD.X(1, 0) * MDD.m(1, 0);
+        //X = RT*M Y = m
+        /*
+        Fig.SaveData2D(MDD.X(0, 0), MDD.m(0, 0));
+        Fig2.SaveData2D(MDD.X(1, 0), MDD.m(1, 0));
+        */
+    }
+
+    aveX[0] = Xsum[0] / data.size();
+    aveX[1] = Xsum[1] / data.size();
+
+    aveX2[0] = X2sum[0] / data.size();
+    aveX2[1] = X2sum[1] / data.size();
+
+    aveY[0] = Ysum[0] / data.size();
+    aveY[1] = Ysum[1] / data.size();
+
+    aveXY[0] = XYsum[0] / data.size();
+    aveXY[1] = XYsum[1] / data.size();
+
+    LQsolution AandB;
+    double k;
+    for (int i = 0; i < 2; i++)
+    {
+
+        double Molecular;   // 分子
+        double Denominator; // 分母
+        Molecular = aveXY[i] - aveX[i] * aveY[i];
+        Denominator = aveX2[i] - aveX[i] * aveX[i];
+        AandB.a[i] = Molecular / Denominator;         // 1/k
+        AandB.b[i] = -AandB.a[i] * aveX[i] + aveY[i]; // offset
+    }
+    k = (AandB.a[0] + AandB.a[1]) / 2;
+    k = 1 / k;
+    //X = RT*M Y = m
+    /*
+    Fig.SeTics(5.0, 5.0);
+    Fig2.SeTics(5.0, 5.0);
+    Fig.XYlabel(xlabel0, ylabel0);
+    Fig2.XYlabel(xlabel1, ylabel1);
+
+    Fig.PrintFig2D();
+    Fig2.PrintFig2D();
+
+    while (!gShutOff)
+    {
+        usleep(1000);
+    }
+    */
+    return AandB;
 }
