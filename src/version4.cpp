@@ -8,23 +8,23 @@ static char log_name_imu[STRLEN / 2] = "imu.log";
 static char log_name_gnss[STRLEN / 2] = "rtk_gnss.log";
 static char log_name_localizer[STRLEN / 2] = "localizer.log";
 
-static char xlabel0[STRLEN / 2] = "X[0]";
-static char ylabel0[STRLEN / 2] = "Y[0]";
+static char xlabel0[STRLEN / 2] = "RT*M[0]";
+static char ylabel0[STRLEN / 2] = "mag[0]";
 
-static char xlabel1[STRLEN / 2] = "X[1]";
-static char ylabel1[STRLEN / 2] = "Y[1]";
+static char xlabel1[STRLEN / 2] = "RT*M[1]";
+static char ylabel1[STRLEN / 2] = "mag[1]";
 
-static char fname0[STRLEN / 2] = "../data2/xy0";
-static char fname1[STRLEN / 2] = "../data2/xy1";
+static char fname0[STRLEN / 2] = "../data3/RTMm0";
+static char fname1[STRLEN / 2] = "../data3/RTMm1";
 
 int main(int aArgc, char **aArgv)
 {
     if (!setOption(aArgc, aArgv))
         return EXIT_FAILURE;
 
-    PlotData Fig(0);
+    /*PlotData Fig(0);
     PlotData Fig2(0);
-    PlotData Fig3(1);
+    PlotData Fig3(1);*/
     MagEquation MF;
     SSMLog<gnss_gl, gnss_property> rtk_gnss;
     SSMLog<imu_fs, imu_property> imu;
@@ -132,7 +132,9 @@ int main(int aArgc, char **aArgv)
                                 tmp.gnssdata[0] = gmag.GmagY / 1000;
                                 tmp.gnssdata[1] = gmag.GmagX / 1000;
                                 tmp.gnssdata[2] = -gmag.GmagZ / 1000;
+                                
                             }
+                            
                             datas.push_back(tmp);
                             break;
                         }
@@ -277,15 +279,16 @@ static int printShortHelp(const char *programName)
     printf("\t-p | --path     PATH     : Set path for log file (default=%s)\n", path);
     return EXIT_SUCCESS;
 }
+
 static LQsolution LeastSquares(std::vector<data_sec> &data) // 最小二乗法を計算する関数　引数：構造体data_secのvectorデータ　返り値：最小二乗法の解aとbの構造体
 {
     /**
      * グラフ化
      * */
-    /*
+    
     PlotData Fig(0);
     PlotData Fig2(0);
-    */
+    
     double Xsum[2] = {0};
     double X2sum[2] = {0};
     double aveX[2] = {0};
@@ -297,6 +300,7 @@ static LQsolution LeastSquares(std::vector<data_sec> &data) // 最小二乗法�
 
     for (int i = 0; i < data.size(); i++)
     {
+        //センサデータからXとYを計算
         CreatMatrix MDD;
         MDD = CaluculateMatrix(data[i]);
         Xsum[0] += MDD.X(0, 0);
@@ -311,10 +315,10 @@ static LQsolution LeastSquares(std::vector<data_sec> &data) // 最小二乗法�
         XYsum[0] += MDD.X(0, 0) * MDD.m(0, 0);
         XYsum[1] += MDD.X(1, 0) * MDD.m(1, 0);
         //X = RT*M Y = m
-        /*
+        
         Fig.SaveData2D(MDD.X(0, 0), MDD.m(0, 0));
         Fig2.SaveData2D(MDD.X(1, 0), MDD.m(1, 0));
-        */
+        
     }
 
     aveX[0] = Xsum[0] / data.size();
@@ -341,10 +345,10 @@ static LQsolution LeastSquares(std::vector<data_sec> &data) // 最小二乗法�
         AandB.a[i] = Molecular / Denominator;         // 1/k
         AandB.b[i] = -AandB.a[i] * aveX[i] + aveY[i]; // offset
     }
-    k = (AandB.a[0] + AandB.a[1]) / 2;
-    k = 1 / k;
+    //k = (AandB.a[0] + AandB.a[1]) / 2;
+    //k = 1 / k;
     //X = RT*M Y = m
-    /*
+    
     Fig.SeTics(5.0, 5.0);
     Fig2.SeTics(5.0, 5.0);
     Fig.XYlabel(xlabel0, ylabel0);
@@ -353,10 +357,12 @@ static LQsolution LeastSquares(std::vector<data_sec> &data) // 最小二乗法�
     Fig.PrintFig2D();
     Fig2.PrintFig2D();
 
-    while (!gShutOff)
+    Fig.SaveFigure(fname0);
+    Fig2.SaveFigure(fname1);
+    /*while (!gShutOff)
     {
         usleep(1000);
-    }
-    */
+    }*/
+    
     return AandB;
 }
