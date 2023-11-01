@@ -34,8 +34,8 @@ int main(int aArgc, char **aArgv)
     if (!setOption(aArgc, aArgv))
         return EXIT_FAILURE;
     MagEquation MF;
-    PlotData Fig(8000.0,0.0,1000.0,-1000.0,1); // gnuplot
-    //PlotData Fig(1);
+    PlotData Fig(8000.0, 0.0, 1000.0, -1000.0, 1); // gnuplot
+    // PlotData Fig(0);
     SSMLog<gnss_gl, gnss_property> rtk_gnss;
     SSMLog<imu_fs, imu_property> imu;
     SSMLog<localizer, localizer_property> local;
@@ -71,9 +71,14 @@ int main(int aArgc, char **aArgv)
     imudata = &imu.data();
     localdata = &local.data();
 
-    double k = 2.254247;
-    double offX = -11.987906;
-    double offY = 8.793467;
+    // １号車
+    double k = 1 / 0.434656;
+    double offX = -9.99637;
+    double offY = 9.69863;
+    // ５号車
+    //    double k = 1/0.499748;
+    //    double offX = 19.73009;
+    //    double offY = 22.57176;
 
     double time = 0.0;
     int count = 0;
@@ -87,6 +92,7 @@ int main(int aArgc, char **aArgv)
         {
             if (rtk_gnss.read())
             {
+
                 if (rtk_gnss.time() - time >= 1.0)
                 {
                     count++;
@@ -107,10 +113,10 @@ int main(int aArgc, char **aArgv)
                         Cr = cos(localdata->estAng[0]);
                         Cp = cos(localdata->estAng[1]);
                         Cy = cos(localdata->estAng[2]);
-                        //printf("%f %f %f %f %f %f\n", Sr,Sp,Sy,Cr,Cp,Cy);
+                        // printf("%f %f %f %f %f %f\n", Sr,Sp,Sy,Cr,Cp,Cy);
                     }
                     if (imu.readTime(time))
-                    {//回転行列１列目
+                    { // 回転行列１列目
                         double Mol;
                         double Deno;
                         Mol = (gnssdataX / k) - Cy * Cp * (imudata->mag[0] - offX) + (Sy * Cr - Cy * Sp * Sr) * (imudata->mag[1] - offY);
@@ -118,7 +124,8 @@ int main(int aArgc, char **aArgv)
                         double offsetZ = imudata->mag[2] - (Mol / Deno);
                         Fig.SaveData2D(count, offsetZ);
                         sum += offsetZ;
-
+                        double ave = sum / count;
+                        std::cout << ave << std::endl;
                     }
                 }
             }
@@ -132,8 +139,8 @@ int main(int aArgc, char **aArgv)
         {
             usleep(10000);
         }
-        
-        //Fig.SaveFigure(name);
+
+        // Fig.SaveFigure(name);
     }
 
     catch (std::runtime_error const &error)

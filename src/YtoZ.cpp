@@ -71,9 +71,14 @@ int main(int aArgc, char **aArgv)
     imudata = &imu.data();
     localdata = &local.data();
 
-    double k = 2.254247;
-    double offX = -11.987906;
-    double offY = 8.793467;
+    //１号車
+    double k = 1/0.434656;
+    double offX = -9.99637;
+    double offY = 9.69863;
+    //５号車
+//    double k = 1/0.499748;
+//    double offX = 19.73009;
+//    double offY = 22.57176;
 
     double time = 0.0;
     int count = 0;

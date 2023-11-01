@@ -58,15 +58,21 @@ int main(int aArgc, char **aArgv)
         double time = 0.0;
         int count = 0;
         int count2 = 0;
-
+        PlotData Fig(1);
         while (!gShutOff)
         {
             if (local.read())
             {
-                printf("%f %f\n",local.time(),localdata->estAng[2]*180/M_PI);
+               // printf("%f %f\n",local.time(),localdata->estAng[2]*180/M_PI);
+                Fig.SaveData2D(local.time(),localdata->estAng[2]);
             }
             else
                 break;
+        }
+        Fig.PrintFig2D();
+        while(!gShutOff)
+        {
+            usleep(1000);
         }
     }
 

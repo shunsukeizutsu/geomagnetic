@@ -102,7 +102,11 @@ int main(int aArgc, char **aArgv)
                 break;
         }
         Fig.PrintFig2Dx2(a, b);
-        Fig.SaveFigure(fname0);
+        //Fig.SaveFigure(fname0);
+        while(!gShutOff)
+        {
+            usleep(1000);
+        }
     }
     catch (std::runtime_error const &error)
     {

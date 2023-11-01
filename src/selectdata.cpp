@@ -264,13 +264,13 @@ int main(int aArgc, char **aArgv)
 
         Fig.PrintFig2D();
         Fig2.PrintFig2D();
-        Fig.SaveFigure(fname0);
-        Fig2.SaveFigure(fname1);
+    //   Fig.SaveFigure(fname0);
+    //    Fig2.SaveFigure(fname1);
 
-        /*while (!gShutOff)
+        while (!gShutOff)
         {
             usleep(1000);
-        }*/
+        }
     }
 
     catch (std::runtime_error const &error)
