@@ -1,55 +1,47 @@
+////*****ファイルからデータを読み取り平均と分散、標準偏差を出力****////
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <signal.h>
+#include <stdexcept>
+#include <unistd.h>
+#include <string.h>
 #include <vector>
-#include <cstring>
 
-#include "creatfig.hpp"
+#define DATPATH "data.dat";
 
-typedef struct
-{
-    double time;
-    double x_coor;
-    double y_coor;
-} test;
-typedef struct
-{
-    a[2];
-    b[2];
-} LQsolution;
-
+using namespace std;
 static int gShutOff = 0;
-static void ctrlC(int aStatus);
 static void setSigInt(void);
 static void Terminate(void);
-static void LeastSquares(std::vector<test> &data);
+static void Calustatic(std::vector<double> &adata);
 
 int main(void)
 {
     try
     {
         setSigInt();
-        std::vector<test> data;
-        int count = 0;
-        while (!gShutOff)
+        FILE *fp;
+        vector<double> adata;
+
+        char fname[] = "../data3/offsetz_5.dat";
+        fp = fopen(fname, "r");
+
+        if (fp == NULL)
         {
-            if (count < 10)
-            {
-                test tmp;
-                tmp.time = count + 1;
-                tmp.x_coor = count + 2;
-                tmp.y_coor = count + 3;
-
-                data.push_back(tmp);
-                count++;
-            }
-
-            else
-                break;
+            printf("do not open %s error\n", fname);
+            exit(EXIT_FAILURE);
         }
-        LeastSquares(data);
+        double data;
+        while (fscanf(fp, "%lf", &data) != EOF)
+        {
+            // std::cout << data << std::endl;
+            adata.push_back(data);
+        }
+        fclose(fp);
+
+        Calustatic(adata);
     }
     catch (std::runtime_error const &error)
     {
@@ -78,59 +70,23 @@ static void Terminate(void)
 {
     printf("\nend\n");
 }
-static result LeastSquares(std::vector<data_sec> &data)
+static void Calustatic(std::vector<double> &adata)
 {
-    double Xsum[2] = {0};
-    double X2sum[2] = {0};
-    double aveX[2] = {0};
-    double aveX2[2] = {0};
-    double Ysum[2] = {0};
-    double aveY[2] = {0};
-    double XYsum[2] = {0};
-    double aveXY[2] = {0};
-
-    for (int i = 0; i < data.size(); i++)
+    double sum = 0;
+    double ave;
+    for (int i = 0; i < adata.size(); i++)
     {
-        CreatMatrix MDD;
-        MDD = CaluculateMatrix(data[i]);
-        Xsum[0] += MDD.X(0, 0);
-        Xsum[1] += MDD.X(1, 0);
-
-        X2sum[0] += MDD.X(0, 0) * MDD.X(0, 0);
-        X2sum[1] += MDD.X(1, 0) * MDD.X(1, 0);
-
-        Ysum[0] += MDD.m(0, 0);
-        Ysum[1] += MDD.m(1, 0);
-
-        XYsum[0] += MDD.X(0, 0) * MDD.m(0, 0);
-        XYsum[1] += MDD.X(1, 0) * MDD.m(1, 0);
+        sum += adata[i];
     }
-
-  /*  aveX[0] = Xsum[0] / data.size();
-    aveX[1] = Xsum[1] / data.size();
-
-    aveX2[0] = X2sum[0] / data.size();
-    aveX2[1] = X2sum[1] / data.size();
-
-    aveY[0] = Ysum[0] / data.size();
-    aveY[1] = Ysum[1] / data.size();
-
-    aveXY[0] = XYsum[0] / data.size();
-    aveXY[1] = XYsum[1] / data.size();
-
-    LQsolution AandB;
-    double k;
-    for (int i = 0; i < 2; i++)
+    ave = sum / adata.size();
+    std::cout << "平均：" << ave << std::endl;
+    double sum2 = 0;
+    for (int i = 0; i < adata.size(); i++)
     {
-
-        double Molecular;   // 分子
-        double Denominator; // 分母
-        Molecular = aveXY[i] - aveX[i] * aveY[i];
-        Denominator = aveX2[i] - aveX[i] * aveX[i];
-        AandB.a[i] = Molecular / Denominator;   // 1/k
-        AandB.b[i] = -a[i] * aveX[i] + aveY[i]; // offset
+        sum2 += (adata[i] - ave) * (adata[i] - ave);
+        // std::cout << adata[i]-ave << std::endl;;
     }
-    k = (a[0] + a[1]) / 2;
-    k = 1 / k;*/
-    return AandB;
+    double ave2 = sum2 / adata.size();
+    std::cout << "分散：" << ave2 << std::endl;
+    std::cout << "標準：" << sqrt(ave2) << std::endl;
 }
