@@ -1,3 +1,4 @@
+//localizerのyawと算出したoffsetを使ったyawを比較
 #include "calcgeo.hpp"
 #include "creatfig.hpp"
 
