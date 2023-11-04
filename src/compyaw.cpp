@@ -3,20 +3,14 @@
 
 static char a[256 / 2] = "imumag";
 static char b[256 / 2] = "localizer";
+static char name[256 / 2] = "../data3/compyaw";
+static char xlabel[256 / 2] = "time[s]";
+static char ylabel[256 / 2] = "yaw[rad]";
 
 static char path[STRLEN / 2] = "/home/shunsuke/2023_logdata/20230401/log_am5/2023.0401.0744";
 static char log_name_imu[STRLEN / 2] = "imu.log";
 static char log_name_gnss[STRLEN / 2] = "rtk_gnss.log";
 static char log_name_localizer[STRLEN / 2] = "localizer.log";
-
-static char xlabel0[STRLEN / 2] = "X[0]";
-static char ylabel0[STRLEN / 2] = "Y[0]";
-
-static char xlabel1[STRLEN / 2] = "X[1]";
-static char ylabel1[STRLEN / 2] = "Y[1]";
-
-static char fname0[STRLEN / 2] = "../data2/comyaw";
-static char fname1[STRLEN / 2] = "../data2/xy1";
 
 double trans_q2(double theta);
 int main(int aArgc, char **aArgv)
@@ -51,12 +45,20 @@ int main(int aArgc, char **aArgv)
 
     imudata = &imu.data();
     localdata = &local.data();
+    // ５号車
 
-    double k = 2.658937;
-    double mag_offsetX = 26.239983;
-    double mag_offsetY = 14.299279;
-    double mag_offsetZ = 31.728186 ;
+    double k = 1 / 0.499748;
+    double mag_offsetX = 19.73009;
+    double mag_offsetY = 22.57176;
+    double mag_offsetZ = -8.69866;
 
+    // １号車
+    /*
+    double k = 1 / 0.434656;
+    double mag_offsetX = -9.99637;
+    double mag_offsetY = 9.69863;
+    double mag_offsetZ = 19.3892;
+    */
     try
     {
         setSigInt();
@@ -102,11 +104,14 @@ int main(int aArgc, char **aArgv)
                 break;
         }
         Fig.PrintFig2Dx2(a, b);
-        //Fig.SaveFigure(fname0);
+        Fig.XYlabel(xlabel, ylabel);
+        Fig.SaveFigure(name);
+        /*
         while(!gShutOff)
         {
             usleep(1000);
         }
+        */
     }
     catch (std::runtime_error const &error)
     {

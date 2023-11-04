@@ -68,7 +68,7 @@ add_executable(calcave ./etc/calcave.cpp ~/creatFig/src/creatfig.cpp ./src/Gnsst
 target_link_libraries(calcave m ssm)
 
 #yawdataを出力するプログラム
-add_executable(yawdata ./src/yawdata.cpp)
+add_executable(yawdata ./src/yawdata.cpp ~/creatFig/src/creatfig.cpp)
 target_link_libraries(yawdata m ssm)
 
 #add_executable(calcgeover2 ./src/calcgeover2.cpp ./src/GnsstoMag.cpp ~/creatFig/src/creatfig.cpp)
@@ -82,7 +82,7 @@ target_link_libraries(yawdata m ssm)
 
 add_executable(callean ./etc/callean.cpp ~/creatFig/src/creatfig.cpp)
 
-#add_executable(test ./etc/test.cpp ~/creatFig/src/creatfig.cpp)
-#target_link_libraries(test m ssm)
+add_executable(test ./etc/test.cpp ~/creatFig/src/creatfig.cpp)
+target_link_libraries(test m ssm)
 
 

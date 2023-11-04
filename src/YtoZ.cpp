@@ -4,37 +4,21 @@
 
 static char xlabel[256 / 2] = "count[qty]";
 
-static char ylabel[256 / 2] = "offset [μT]";
-static char name[256 / 2] = "../data/yawdata2";
-static char a[256 / 2] = "offsetX";
-static char b[256 / 2] = "offsetY";
-static char c[256 / 2] = "offsetZ";
-/*
-static char ylabel[256 / 2] = "1/k";
-static char name[256 / 2] = "../data/0331_kdata_pm1";
-static char a[256 / 2] = "1/k0";
-static char b[256 / 2] = "1/k1";
-static char c[256 / 2] = "1/k2";
-*/
+static char ylabel[256 / 2] = "offsetz [μT]";
+static char name[256 / 2] = "../data3/YtoZ";
+
+
 static char path[STRLEN / 2] = "/home/haselab15/2023_logdata/20230401/log_am5/2023.0401.0744";
 static char log_name_imu[STRLEN / 2] = "imu.log";
 static char log_name_gnss[STRLEN / 2] = "rtk_gnss.log";
 static char log_name_localizer[STRLEN / 2] = "localizer.log";
 
-static char xlabel0[STRLEN / 2] = "X[0]";
-static char ylabel0[STRLEN / 2] = "Y[0]";
-
-static char xlabel1[STRLEN / 2] = "X[1]";
-static char ylabel1[STRLEN / 2] = "Y[1]";
-
-static char fname0[STRLEN / 2] = "../data/xy0";
-static char fname1[STRLEN / 2] = "../data/xy1";
 int main(int aArgc, char **aArgv)
 {
     if (!setOption(aArgc, aArgv))
         return EXIT_FAILURE;
     MagEquation MF;
-    PlotData Fig(8000.0,0.0,1000.0,-1000.0,1); // gnuplot
+    PlotData Fig(8000.0, 0.0, 1000.0, -1000.0, 1); // gnuplot
 
     SSMLog<gnss_gl, gnss_property> rtk_gnss;
     SSMLog<imu_fs, imu_property> imu;
@@ -71,15 +55,17 @@ int main(int aArgc, char **aArgv)
     imudata = &imu.data();
     localdata = &local.data();
 
-    //１号車
-    double k = 1/0.434656;
+    // １号車
+    
+    double k = 1 / 0.434656;
     double offX = -9.99637;
     double offY = 9.69863;
-    //５号車
-//    double k = 1/0.499748;
-//    double offX = 19.73009;
-//    double offY = 22.57176;
-
+    
+    // ５号車
+    /*double k = 1 / 0.499748;
+    double offX = 19.73009;
+    double offY = 22.57176;
+    */
     double time = 0.0;
     int count = 0;
 
@@ -87,58 +73,57 @@ int main(int aArgc, char **aArgv)
 
     try
     {
+        std::vector<double> offsetz;
         setSigInt();
         while (!gShutOff)
         {
             if (rtk_gnss.read())
             {
-                if (rtk_gnss.time() - time >= 1.0)
+                if (rtk_gnss.time() - rtk_gnss.getStartTime() >= 1800)
                 {
-                    count++;
-                    time = rtk_gnss.time();
-                    GG gmag;
-                    gmag = MF.MagXYZ(gnssdata->latitude, gnssdata->longitude);
-                    double gnssdataX = gmag.GmagY / 1000;
-                    double gnssdataY = gmag.GmagX / 1000;
-                    double gnssdataZ = -gmag.GmagZ / 1000;
-
-                    double Sr, Sp, Sy, Cr, Cp, Cy;
-
-                    if (local.readTime(time))
+                    if (rtk_gnss.time() - time >= 1.0)
                     {
-                        Sr = sin(localdata->estAng[0]);
-                        Sp = sin(localdata->estAng[1]);
-                        Sy = sin(localdata->estAng[2]);
-                        Cr = cos(localdata->estAng[0]);
-                        Cp = cos(localdata->estAng[1]);
-                        Cy = cos(localdata->estAng[2]);
-                        //printf("%f %f %f %f %f %f\n", Sr,Sp,Sy,Cr,Cp,Cy);
-                    }
-                    if (imu.readTime(time))
-                    {//回転行列１列目
-                        double Mol;
-                        double Deno;
-                        Mol = (gnssdataY / k) - Sy * Cp * (imudata->mag[0] - offX) - (Cy * Cr + Sy * Sp * Sr) * (imudata->mag[1] - offY);
-                        Deno = - Cy * Sr + Sp * Sy * Cr;
-                        double offsetZ = imudata->mag[2] - (Mol / Deno);
-                        Fig.SaveData2D(count, offsetZ);
-                        sum += offsetZ;
+                        count++;
+                        time = rtk_gnss.time();
+                        GG gmag;
+                        gmag = MF.MagXYZ(gnssdata->latitude, gnssdata->longitude);
+                        double gnssdataX = gmag.GmagY / 1000;
+                        double gnssdataY = gmag.GmagX / 1000;
+                        double gnssdataZ = -gmag.GmagZ / 1000;
 
+                        double Sr, Sp, Sy, Cr, Cp, Cy;
+
+                        if (local.readTime(time))
+                        {
+                            Sr = sin(localdata->estAng[0]);
+                            Sp = sin(localdata->estAng[1]);
+                            Sy = sin(localdata->estAng[2]);
+                            Cr = cos(localdata->estAng[0]);
+                            Cp = cos(localdata->estAng[1]);
+                            Cy = cos(localdata->estAng[2]);
+                            // printf("%f %f %f %f %f %f\n", Sr,Sp,Sy,Cr,Cp,Cy);
+                        }
+                        if (imu.readTime(time))
+                        { // 回転行列１列目
+                            double Mol;
+                            double Deno;
+                            Mol = (gnssdataY / k) - Sy * Cp * (imudata->mag[0] - offX) - (Cy * Cr + Sy * Sp * Sr) * (imudata->mag[1] - offY);
+                            Deno = -Cy * Sr + Sp * Sy * Cr;
+                            double offsetZ = imudata->mag[2] - (Mol / Deno);
+                            Fig.SaveData2D(count, offsetZ);
+                            offsetz.push_back(offsetZ);
+
+                        }
                     }
                 }
             }
             else
                 break;
         }
-        // std::cout << k << std::endl;
-        // std::cout << sum / count << std::endl;
+        Fig.XYlabel(xlabel,ylabel);
         Fig.PrintFig2D();
-        while (!gShutOff)
-        {
-            usleep(10000);
-        }
-        
-        //Fig.SaveFigure(name);
+        Fig.SaveFigure(name);
+        Calustatic(offsetz);
     }
 
     catch (std::runtime_error const &error)
@@ -273,4 +258,24 @@ static int printShortHelp(const char *programName)
     fputs("OPTION\n", stderr);
     printf("\t-p | --path     PATH     : Set path for log file (default=%s)\n", path);
     return EXIT_SUCCESS;
+}
+static void Calustatic(std::vector<double> &adata)
+{
+    double sum = 0;
+    double ave;
+    for (int i = 0; i < adata.size(); i++)
+    {
+        sum += adata[i];
+    }
+    ave = sum / adata.size();
+    std::cout << "平均：" << ave << std::endl;
+    double sum2 = 0;
+    for (int i = 0; i < adata.size(); i++)
+    {
+        sum2 += (adata[i] - ave) * (adata[i] - ave);
+        // std::cout << adata[i]-ave << std::endl;;
+    }
+    double ave2 = sum2 / adata.size();
+    std::cout << "分散：" << ave2 << std::endl;
+    std::cout << "標準：" << sqrt(ave2) << std::endl;
 }
